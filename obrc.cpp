@@ -9,6 +9,8 @@
 #include <chrono>
 #include <fstream>
 #include <cstring>
+#include <unordered_map>
+#include <vector>
 
 using namespace std;
 
@@ -21,6 +23,9 @@ int main(int argc, char* argv[]) {
   //Keeping track of start time
   chrono::time_point<chrono::system_clock> start, end;
   start = chrono::system_clock::now();
+
+  unordered_map<string, vector<double>> umap;
+  unordered_map<string, vector<double>>::iterator itr;
 
   char* fname = argv[1];
   int fd = open(fname, O_RDONLY, S_IRUSR | S_IWUSR);
@@ -47,9 +52,28 @@ int main(int argc, char* argv[]) {
     string cname (line, cnamepos);
     string temp (line+cnamepos+1, lineLength-cnamepos);
     double ctemp = stod(temp);
+
+    if(umap.find(cname) == umap.end()){
+      vector<double> dtemp (4);
+      dtemp[0] = ctemp;
+      dtemp[1] = 1;
+      dtemp[2] = ctemp;
+      dtemp[3] = ctemp;
+      
+      umap[cname] = dtemp;
+    } else {
+      umap[cname][0] += ctemp;
+      umap[cname][1]++;
+      if(ctemp < umap[cname][2]){
+	umap[cname][2] = ctemp;
+      }
+      if(ctemp > umap[cname][3]){
+	umap[cname][3] = ctemp;
+      }
+    }
     
-    cout << cname << endl;
-    cout << ctemp << endl;
+    //cout << cname << endl;
+    //cout << ctemp << endl;
     //cout.write(line, lineLength);
     //cout << endl;
 
@@ -57,6 +81,12 @@ int main(int argc, char* argv[]) {
     currentPos += lineLength + 1;
   }
 
+  for(itr = umap.begin(); itr != umap.end(); itr++){
+    cout << itr->first << endl;
+    double calculate = itr->second[0]/itr->second[1];
+    cout << calculate << endl;
+  }
+  
   /*FILE* fp = fopen(argv[2], "w");
 
     fprintf(fp, "%d,%d;\n", c, total);*/
