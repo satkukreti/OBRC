@@ -39,10 +39,19 @@ int main(int argc, char* argv[]) {
   size_t currentPos = 0;
   while (currentPos < static_cast<size_t>(sb.st_size)) {
     const char* line = filemem + currentPos;
+    //Delimiters
     size_t lineLength = strcspn(line, "\n");
+    size_t cnamepos = strcspn(line, ";");
 
-    cout.write(line, lineLength);
-    cout << endl;
+    //Parsing out the name and temp
+    string cname (line, cnamepos);
+    string temp (line+cnamepos+1, lineLength-cnamepos);
+    double ctemp = stod(temp);
+    
+    cout << cname << endl;
+    cout << ctemp << endl;
+    //cout.write(line, lineLength);
+    //cout << endl;
 
     //moves on to the next line
     currentPos += lineLength + 1;
