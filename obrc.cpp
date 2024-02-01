@@ -11,6 +11,7 @@
 #include <cstring>
 #include <unordered_map>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -26,6 +27,7 @@ int main(int argc, char* argv[]) {
 
   unordered_map<string, vector<double>> umap;
   unordered_map<string, vector<double>>::iterator itr;
+  vector<string> ordered;
 
   char* fname = argv[1];
   int fd = open(fname, O_RDONLY, S_IRUSR | S_IWUSR);
@@ -52,6 +54,8 @@ int main(int argc, char* argv[]) {
     string cname (line, cnamepos);
     string temp (line+cnamepos+1, lineLength-cnamepos);
     double ctemp = stod(temp);
+
+    ordered.push_back(cname);
 
     if(umap.find(cname) == umap.end()){
       vector<double> dtemp (4);
@@ -81,10 +85,14 @@ int main(int argc, char* argv[]) {
     currentPos += lineLength + 1;
   }
 
-  for(itr = umap.begin(); itr != umap.end(); itr++){
+  /*for(itr = umap.begin(); itr != umap.end(); itr++){
     cout << itr->first << endl;
     double calculate = itr->second[0]/itr->second[1];
     cout << calculate << endl;
+    }*/
+  sort(ordered.begin(), ordered.end());
+  for(string str: ordered){
+    cout << str << endl;
   }
   
   /*FILE* fp = fopen(argv[2], "w");
