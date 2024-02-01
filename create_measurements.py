@@ -42,7 +42,7 @@ def build_weather_station_name_list():
     Grabs the weather station names from example data provided in repo and dedups
     """
     station_names = []
-    with open('../../../data/weather_stations.csv', 'r') as file:
+    with open('weather_stations.csv', 'r') as file:
         file_contents = file.read()
     for station in file_contents.splitlines():
         if "#" in station:
@@ -114,7 +114,7 @@ def build_test_data(weather_station_names, num_rows_to_create):
     print('Building test data...')
 
     try:
-        with open("../../../data/measurements.txt", 'w') as file:
+        with open("measurements.txt", 'w') as file:
             for s in range(0,num_rows_to_create):
                 random_station = random.choice(station_names_10k_max)
                 random_temp = round(random.uniform(coldest_temp, hottest_temp), 1)
@@ -132,7 +132,7 @@ def build_test_data(weather_station_names, num_rows_to_create):
     
     end_time = time.time()
     elapsed_time = end_time - start_time
-    file_size = os.path.getsize("../../../data/measurements.txt")
+    file_size = os.path.getsize("measurements.txt")
     human_file_size = convert_bytes(file_size)
  
     print("Test data successfully written to 1brc/data/measurements.txt")
