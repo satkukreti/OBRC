@@ -13,8 +13,11 @@
 #include <vector>
 #include <algorithm>
 #include <set>
+#include "flat_hash_map.hpp"
 
 using namespace std;
+
+ska::flat_hash_map<string, vector<double>> umap;
 
 int main(int argc, char* argv[]) {
   if(argc != 3){
@@ -26,7 +29,7 @@ int main(int argc, char* argv[]) {
   chrono::time_point<chrono::system_clock> start, end;
   start = chrono::system_clock::now();
 
-  unordered_map<string, vector<double>> umap;
+  //unordered_map<string, vector<double>> umap;
   unordered_map<string, vector<double>>::iterator itr;
   set<string> ordered;
 
@@ -58,6 +61,7 @@ int main(int argc, char* argv[]) {
 
     ordered.insert(cname);
 
+    //auto it = umap.find(cname);
     if(umap.find(cname) == umap.end()){
       vector<double> dtemp (4);
       dtemp[0] = ctemp;
