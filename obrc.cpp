@@ -15,6 +15,7 @@
 #include <set>
 #include <thread>
 #include <mutex>
+#include <cstddef>
 #include "flat_hash_map.hpp"
 
 struct City{
@@ -34,6 +35,58 @@ using namespace std;
 
 ska::flat_hash_map<string, City> umap;
 set<string> ordered;
+
+size_t findDelimiter(char delimiter, const char* filemem, size_t sb, size_t pos) {
+    while (pos < sb  && filemem[pos] != delimiter) {
+        pos++;
+    }
+    return pos;
+    }
+
+void processChunk(char* filemem, size_t start, size_t end, size_t sb){
+  //Get file input, line by line
+  if(start != 0){
+    size_t l = strcspn(filemem + start, "\n");
+    start += l;
+    start++;
+    //start = findDelimiter('\n', filemem, sb, start) + 1;
+  }
+
+  //end = findDelimiter('\n', filemem, sb, end - 1); // Corrected the end calculation
+  //end++; // Increment to include the newline character
+  size_t m = strcspn(filemem + end, "\n");
+  end += m;
+  end++;
+  //if (end < sb) {
+  //end++;
+  //}
+
+  //lock_guard<mutex> lock(tsafe);
+  size_t currentPos = start;
+  while(currentPos < end){
+    const char* line = filemem + currentPos;
+
+    size_t lineLength = strcspn(line, "\n");
+    if(lineLength == 0){currentPos++; continue;}
+	
+    size_t cnamepos = strcspn(line, ";");
+    if(cnamepos == lineLength){currentPos += lineLength+1; continue;}
+
+    string cname(line, cnamepos);
+    string temp(line + cnamepos + 1, lineLength - cnamepos);
+    double ctemp = stod(temp);
+    {
+        ordered.insert(cname);
+        City& c = umap[cname];
+        c.sum += ctemp;
+        c.num++;
+        if (ctemp < c.low) { c.low = ctemp; }
+        if (ctemp > c.high) { c.high = ctemp; }
+     }
+
+    currentPos += lineLength + 1;
+  }
+}
 
 int main(int argc, char* argv[]) {
   if(argc != 2){
@@ -57,35 +110,24 @@ int main(int argc, char* argv[]) {
   //allocating memory for the input file
   char* filemem = static_cast<char *>(mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0));
 
-  
-  //Get file input, line by line
-  size_t currentPos = 0;
-  while(currentPos < static_cast<size_t>(sb.st_size)){
-    const char* line = filemem + currentPos;
+  int nThreads = thread::hardware_concurrency();
+  size_t chunkSize = sb.st_size/nThreads;
 
-    size_t lineLength = strcspn(line, "\n");
-    if(lineLength == 0){currentPos++; continue;}
-	
-    size_t cnamepos = strcspn(line, ";");
-    if(cnamepos == lineLength){currentPos += lineLength+1; continue;}
-
-    string cname(line, cnamepos);
-    string temp(line + cnamepos + 1, lineLength - cnamepos);
-    double ctemp = stod(temp);
-    {
-
-        ordered.insert(cname);
-        City& c = umap[cname];
-        c.sum += ctemp;
-        c.num++;
-        if (ctemp < c.low) { c.low = ctemp; }
-        if (ctemp > c.high) { c.high = ctemp; }
-     }
-
-    currentPos += lineLength + 1;
+  vector<thread> threads;
+  for (int i = 0; i < nThreads - 1; i++) {
+      size_t start = i * chunkSize;
+      size_t end = (i + 1) * chunkSize;
+      threads.emplace_back(processChunk, filemem, start, end, sb.st_size);
   }
 
- 
+  size_t start = (nThreads - 1) * chunkSize;
+  size_t end = sb.st_size;
+  threads.emplace_back(processChunk, filemem, start, end, sb.st_size);
+
+  for(auto& thread: threads){
+    thread.join();
+  }
+  
   for (string str : ordered) {
       cout << str << endl;
       double calculate = umap[str].sum / umap[str].num;
