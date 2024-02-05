@@ -1,0 +1,4 @@
+To run the code, type make to the command line.
+Then, write ./obrc <file_name> to execute the program.
+
+My submission version uses mutex to keep everything thread safe. However, when I remove mutex, my code run ~8-10x faster (3 sec for 100,000,000 lines) but also gets segmentation faults a lot when executing the code randomly.
