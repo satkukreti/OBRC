@@ -13,25 +13,37 @@
 #include <vector>
 #include <algorithm>
 #include <set>
+#include <thread>
+#include <mutex>
 #include "flat_hash_map.hpp"
+
+struct City{
+  double high;
+  double low;
+  double sum;
+  int num;
+  City(){
+    high = 0.0;
+    low = 0.0;
+    sum = 0.0;
+    num = 0;
+  }
+};
 
 using namespace std;
 
-ska::flat_hash_map<string, vector<double>> umap;
+ska::flat_hash_map<string, City> umap;
+set<string> ordered;
 
 int main(int argc, char* argv[]) {
-  if(argc != 3){
-    cerr << "Error: ./obrc <input_file> <output_file>" << endl;
+  if(argc != 2){
+    cerr << "Error: ./obrc <input_file>" << endl;
     exit(1);
   }
   
   //Keeping track of start time
-  chrono::time_point<chrono::system_clock> start, end;
-  start = chrono::system_clock::now();
-
-  //unordered_map<string, vector<double>> umap;
-  unordered_map<string, vector<double>>::iterator itr;
-  set<string> ordered;
+  chrono::time_point<chrono::system_clock> s, e;
+  s = chrono::system_clock::now();
 
   char* fname = argv[1];
   int fd = open(fname, O_RDONLY, S_IRUSR | S_IWUSR);
@@ -48,68 +60,41 @@ int main(int argc, char* argv[]) {
   
   //Get file input, line by line
   size_t currentPos = 0;
-  while (currentPos < static_cast<size_t>(sb.st_size)) {
+  while(currentPos < static_cast<size_t>(sb.st_size)){
     const char* line = filemem + currentPos;
-    //Delimiters
+
     size_t lineLength = strcspn(line, "\n");
+    if(lineLength == 0){currentPos++; continue;}
+	
     size_t cnamepos = strcspn(line, ";");
+    if(cnamepos == lineLength){currentPos += lineLength+1; continue;}
 
-    //Parsing out the name and temp
-    string cname (line, cnamepos);
-    string temp (line+cnamepos+1, lineLength-cnamepos);
+    string cname(line, cnamepos);
+    string temp(line + cnamepos + 1, lineLength - cnamepos);
     double ctemp = stod(temp);
+    {
 
-    ordered.insert(cname);
+        ordered.insert(cname);
+        City& c = umap[cname];
+        c.sum += ctemp;
+        c.num++;
+        if (ctemp < c.low) { c.low = ctemp; }
+        if (ctemp > c.high) { c.high = ctemp; }
+     }
 
-    //auto it = umap.find(cname);
-    if(umap.find(cname) == umap.end()){
-      vector<double> dtemp (4);
-      dtemp[0] = ctemp;
-      dtemp[1] = 1;
-      dtemp[2] = ctemp;
-      dtemp[3] = ctemp;
-      
-      umap[cname] = dtemp;
-    } else {
-      umap[cname][0] += ctemp;
-      umap[cname][1]++;
-      if(ctemp < umap[cname][2]){
-	umap[cname][2] = ctemp;
-      }
-      if(ctemp > umap[cname][3]){
-	umap[cname][3] = ctemp;
-      }
-    }
-    
-    //cout << cname << endl;
-    //cout << ctemp << endl;
-    //cout.write(line, lineLength);
-    //cout << endl;
-
-    //moves on to the next line
     currentPos += lineLength + 1;
   }
 
-  /*for(itr = umap.begin(); itr != umap.end(); itr++){
-    cout << itr->first << endl;
-    double calculate = itr->second[0]/itr->second[1];
-    cout << calculate << endl;
-    }*/
-  //sort(ordered.begin(), ordered.end());
-  for(string str: ordered){
-    cout << str << endl;
-    double calculate = umap[str][0]/umap[str][1];
-    cout << calculate << " " << umap[str][2] << " " << umap[str][3] << endl;
+ 
+  for (string str : ordered) {
+      cout << str << endl;
+      double calculate = umap[str].sum / umap[str].num;
+      cout << calculate << " " << umap[str].low << " " << umap[str].high << endl;
   }
   
-  /*FILE* fp = fopen(argv[2], "w");
-
-    fprintf(fp, "%d,%d;\n", c, total);*/
-    
-
   //End time
-  end = chrono::system_clock::now();
-  chrono::duration<double> elapsed_seconds = end - start;
+  e = chrono::system_clock::now();
+  chrono::duration<double> elapsed_seconds = e - s;
   cout << "Elapsed time: " << elapsed_seconds.count() << "s" << endl;
 
   munmap(filemem, sb.st_size);

@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wall -Werror -pedantic
+CFLAGS = -O3 -Wall -Werror -pthread -pedantic
 
 all: obrc.cpp
 	$(CC) $(CFLAGS) -o obrc obrc.cpp
