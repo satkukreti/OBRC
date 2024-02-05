@@ -35,13 +35,7 @@ using namespace std;
 
 ska::flat_hash_map<string, City> umap;
 set<string> ordered;
-
-size_t findDelimiter(char delimiter, const char* filemem, size_t sb, size_t pos) {
-    while (pos < sb  && filemem[pos] != delimiter) {
-        pos++;
-    }
-    return pos;
-    }
+mutex tsafe;
 
 void processChunk(char* filemem, size_t start, size_t end, size_t sb){
   //Get file input, line by line
@@ -49,19 +43,13 @@ void processChunk(char* filemem, size_t start, size_t end, size_t sb){
     size_t l = strcspn(filemem + start, "\n");
     start += l;
     start++;
-    //start = findDelimiter('\n', filemem, sb, start) + 1;
   }
 
-  //end = findDelimiter('\n', filemem, sb, end - 1); // Corrected the end calculation
-  //end++; // Increment to include the newline character
   size_t m = strcspn(filemem + end, "\n");
   end += m;
-  end++;
-  //if (end < sb) {
-  //end++;
-  //}
+  if(end >= sb){ end = sb-1;}
 
-  //lock_guard<mutex> lock(tsafe);
+  lock_guard<mutex> lock(tsafe);
   size_t currentPos = start;
   while(currentPos < end){
     const char* line = filemem + currentPos;
